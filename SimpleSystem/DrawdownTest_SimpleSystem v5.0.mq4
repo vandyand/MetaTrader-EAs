@@ -87,10 +87,14 @@ void OnTick()
 
 double OnTester(){
    
+   double drawdown, drawdown_pct, sharpe, sortino;
+   double ret = get_drawdown(0,"none", drawdown, drawdown_pct);
+   double ret2 = get_sharpe_sortino(10,"back",sharpe,sortino);
    
-   double drawdown = get_drawdown(30,"fore");
+   Alert("drawdown = "+string(drawdown)+", drawdown pct = "+string(drawdown_pct));
+   Alert("sharpe = "+string(sharpe)+", sortino = "+string(sortino));
    
-   return(drawdown);
+   return(sortino);
 }
 
 
@@ -115,7 +119,7 @@ int FindTicket(int M)
    return(ret);
 }
 
-double get_drawdown(int firstftrade_, string bf){
+double get_sharpe_sortino(int firstftrade_, string bf, double& shsharpe, double& ssortino){
    
    if(OrdersHistoryTotal()<=1){
       return(0);
@@ -125,12 +129,95 @@ double get_drawdown(int firstftrade_, string bf){
    int strt = 0;
    int end = 0;
    
-   if(bf=="back"){
+   if(bf=="fore"){
       strt = OrdersHistoryTotal()-1;
       end = firstftrade_;
       num_orders = OrdersHistoryTotal()-firstftrade_-1;
    }
-   else if(bf=="fore"){
+   else if(bf=="back"){
+      strt = firstftrade_;
+      end = -1;
+      num_orders = firstftrade_ + 1;
+   }
+   else if(bf=="none"){
+      strt = OrdersHistoryTotal()-1;
+      end = -1;
+      num_orders = OrdersHistoryTotal();
+   }
+   else{
+      return(-1);
+   }
+   
+   if(num_orders<=1){
+      return(0);
+   }
+   
+   double sum = 0;
+   double neg_sum = 0;
+   int num_neg_orders = 0;
+   
+   for(int i = strt; i > end; --i){
+      bool res = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
+      sum += OrderProfit();
+      if(OrderProfit()<=0){
+         neg_sum += OrderProfit();
+         num_neg_orders++;
+      }
+   }
+   
+   if(num_neg_orders<=1){
+      return(0);
+   }
+   
+   double mean = sum/num_orders;
+   double neg_mean = neg_sum/num_neg_orders; 
+   
+   double sum2_shar = 0;
+   double sum2_sort = 0;
+   for(int i = strt; i > end; --i){
+      bool res = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
+      sum2_shar += MathPow(OrderProfit() - mean,2);
+      if(OrderProfit()<=0){
+         sum2_sort += MathPow(OrderProfit() - neg_mean,2);
+      }
+   }
+   
+   double var = sum2_shar/(num_orders-1);
+   double neg_var = sum2_sort/(num_neg_orders-1);
+   
+   
+   double std = (MathPow(var,0.5));
+   double neg_std = (MathPow(neg_var,0.5));//(sum2,0.5)/(num_orders - 1);
+   
+   shsharpe = mean/std;
+   ssortino = mean/neg_std;
+   
+   if(neg_var<=0.00005&&mean>0){
+      ssortino=10;
+   }
+   if(var<=0.00005&&mean>0){
+      shsharpe=10;
+   }
+   
+   return(1);
+}
+
+double get_drawdown(int firstftrade_, string bf, double& dd, double& dd_pct){
+   
+   if(OrdersHistoryTotal()<=1){
+      return(0);
+   }
+   
+   int num_orders = 0;
+   int strt = 0;
+   int end = 0;
+   
+   if(bf=="fore"){
+      strt = OrdersHistoryTotal()-1;
+      end = firstftrade_;
+      num_orders = OrdersHistoryTotal()-firstftrade_-1;
+   }
+   else if(bf=="back"){
       strt = firstftrade_;
       end = -1;
       num_orders = firstftrade_ + 1;
@@ -144,6 +231,7 @@ double get_drawdown(int firstftrade_, string bf){
    
    double local_drawdown = 0;
    double max_drawdown = 0;
+   double max_drawdown_pct = 0;
    double high_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
    double local_low_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
    double curr_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
@@ -161,7 +249,28 @@ double get_drawdown(int firstftrade_, string bf){
       local_drawdown = high_bal - local_low_bal;
       if(local_drawdown > max_drawdown){
          max_drawdown = local_drawdown;
+         max_drawdown_pct = max_drawdown/high_bal*100;
       }
    }
-   return(max_drawdown);
+   
+   dd = max_drawdown;
+   dd_pct = max_drawdown_pct;
+   return(1);
 }
+
+
+/*
+void SuperFunc(int& valueForReturn1,double& valueForReturn2,string& valueForReturn3)
+{
+   valueForReturn1=100;
+   valueForReturn2=300.0;
+   valueForReturn3="it works!!";
+}
+
+int value1=0;
+double value2=0.0;
+string value3="";
+ 
+SuperFunc(value1,value2,value3);
+MessageBox("value1="+value1+" value2="+value2+" value3="+value3);
+*/
