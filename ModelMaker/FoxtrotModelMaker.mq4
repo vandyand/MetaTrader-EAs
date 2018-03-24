@@ -33,8 +33,9 @@ extern double recov_factr_thresh = 0;
 extern double sharpe_thresh = 0;
 extern double score_thresh = 0;
 extern int num_trades_thresh = 1;
+extern string split_type = "";
 extern datetime split_datetime = 0;
-extern double back_fore_ratio = 0.75;
+extern double back_fore_ratio = 0;
 extern bool write_to_file = false;
 extern string file_nameish = "";
 extern int score_type = 0;
@@ -455,17 +456,22 @@ double OnTester(){
       }
       
       //Get first forward trade
-      //firstftrade = int(OrdersHistoryTotal()*back_fore_ratio);
-      
-      for(int i = 0; i < OrdersHistoryTotal(); i++){
-         bool res = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
-         if(OrderOpenTime()>split_datetime){
-            firstftrade = i-1;
-            i=OrdersHistoryTotal();
-         }
+      if(split_type == "ratio"){
+         firstftrade = int(OrdersHistoryTotal()*back_fore_ratio);
       }
-      
-      
+      else if(split_type == "date"){
+         bool found = false;
+         for(int i = 0; i < OrdersHistoryTotal(); i++){
+            bool res = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
+            if(OrderOpenTime()>split_datetime){
+               firstftrade = i-1;
+               i=OrdersHistoryTotal();
+               found = true;
+            }
+         }
+         if(!found){firstftrade = OrdersHistoryTotal()-1;}
+      }
+      else{firstftrade = 0;}
       
       //backtest stuff
       /*
@@ -521,23 +527,14 @@ double OnTester(){
          if(fprofit>0){fscore6 = fsortino*fsortino*fnum_trades;}
       }
       
-      if(profit_factor>=prof_factr_thresh
-         &&bprofit_factor>=prof_factr_thresh
-         &&fprofit_factor>=prof_factr_thresh
-         &&recovery_factor>=recov_factr_thresh
+      if(bprofit_factor>=prof_factr_thresh
          &&brecovery_factor>=recov_factr_thresh
-         &&frecovery_factor>=recov_factr_thresh
-         &&sharpe>=sharpe_thresh
          &&bsharpe>=sharpe_thresh
-         &&fsharpe>=sharpe_thresh
-         &&score2>=score_thresh
-         &&bscore2>=score_thresh
-         &&fscore2>=score_thresh
          &&num_trades>=num_trades_thresh){
          //Write to ffffile
          int b = 0;
          
-         string file_name = file_nameish+"_"+string(Symbol())+"_V"+string(alg_vers)+".csv";
+         string file_name = file_nameish+"_"+string(Symbol())+"_V"+string(alg_vers)+"_NIT"+string(num_input_types)+".csv";
          b = FileOpen(file_name,FILE_CSV|FILE_READ|FILE_WRITE,",");
          if(b==-1){
             Alert("File didn't open");
@@ -549,25 +546,30 @@ double OnTester(){
                       bnum_trades,bnum_long_trades,bnum_short_trades,
                       DoubleToStr(bprofit_factor,2),DoubleToStr(bexpected_payoff,2),DoubleToStr(brecovery_factor,2),
                       DoubleToStr(bdrawdown_dol,2),DoubleToStr(bdrawdown_pct,3),
-                      DoubleToStr(bsharpe,3),DoubleToStr(bsortino,3),DoubleToStr(bscore1,2),DoubleToStr(bscore2,2),
-                      DoubleToStr(fprofit,2),DoubleToStr(fgross_profit,2),DoubleToStr(fgross_loss,2),
-                      fnum_trades,fnum_long_trades,fnum_short_trades,
-                      DoubleToStr(fprofit_factor,2),DoubleToStr(fexpected_payoff,2),DoubleToStr(frecovery_factor,2),
-                      DoubleToStr(fdrawdown_dol,2),DoubleToStr(fdrawdown_pct,3),
-                      DoubleToStr(fsharpe,3),DoubleToStr(fsortino,3),DoubleToStr(fscore1,2),DoubleToStr(fscore2,2),
-                      DoubleToStr(profit,2),DoubleToStr(gross_profit,2),DoubleToStr(gross_loss,2),
-                      num_trades,num_long_trades,num_short_trades,
-                      DoubleToStr(profit_factor,2),DoubleToStr(expected_payoff,2),DoubleToStr(recovery_factor,2),
-                      DoubleToStr(drawdown_dol,2),DoubleToStr(drawdown_pct,3),
-                      DoubleToStr(sharpe,3),DoubleToStr(sortino,3),DoubleToStr(score1,2),DoubleToStr(score2,2),
+                      DoubleToStr(bsharpe,3),DoubleToStr(bsortino,3),
+                      DoubleToStr(bscore0,2),DoubleToStr(bscore1,2),
+                      DoubleToStr(bscore2,2),DoubleToStr(bscore3,2),
+                      DoubleToStr(bscore4,2),DoubleToStr(bscore5,2),
+                      DoubleToStr(bscore6,2),
+                      DoubleToStr(fprofit,2),
+                      num_trades,
                       firstftrade,
-                      iterater,sell_iterater,exit_long_itrtr,exit_short_itrtr);
+                      iterater,sell_iterater,exit_long_itrtr,exit_short_itrtr,file_name);
             FileClose(b);
             Alert("Written to File");
          }
       }
       
-      return(score2);
+      switch(score_type){
+            case 0 : return(score0);  break;
+            case 1 : return(score1);  break;
+            case 2 : return(score2);  break;
+            case 3 : return(score3);  break;
+            case 4 : return(score4);  break;
+            case 5 : return(score5);  break;
+            case 6 : return(score6);  break;
+            default: return(-1);
+         } 
    //}
    //return(-1);
 }
