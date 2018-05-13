@@ -164,7 +164,8 @@ int ADXPeriod = 20;
 int MomPeriod = 20;
 int RSIPeriod = 20;
 
-double variables[1000];
+double variables[100];
+string nvariables[100];
 
 
 bool first_pass = true;
@@ -290,6 +291,37 @@ void OnTick(){
       variables[28] = LWMA_200;
       variables[29] = EMA_250;
       
+      nvariables[0] = "Price";
+      nvariables[1] = "SMA_25";
+      nvariables[2] = "BB_20_2_Upper";
+      nvariables[3] = "BB_20_2_Lower";
+      nvariables[4] = "SMA_100";
+      nvariables[5] = "SMA_5";
+      nvariables[6] = "BB_50_3_Upper";
+      nvariables[7] = "BB_20_3_Lower";
+      nvariables[8] = "Open[24]";
+      nvariables[9] = "SMA_200";
+      nvariables[10] = "SMA_50";
+      nvariables[11] = "BB_20_3_Upper";
+      nvariables[12] = "BB_50_3_Lower";
+      nvariables[13] = "Open[12]";
+      nvariables[14] = "EMA_35";
+      nvariables[15] = "SMA_150";
+      nvariables[16] = "BB_50_2_Upper";
+      nvariables[17] = "BB_50_2_Lower";
+      nvariables[18] = "Open[48]";
+      nvariables[19] = "EMA_10";
+      nvariables[20] = "EMA_75";
+      nvariables[21] = "EMA_125";
+      nvariables[22] = "EMA_175";
+      nvariables[23] = "LWMA_100";
+      nvariables[24] = "LWMA_50";
+      nvariables[25] = "LWMA_25";
+      nvariables[26] = "LWMA_5";
+      nvariables[27] = "LWMA_150";
+      nvariables[28] = "LWMA_200";
+      nvariables[29] = "EMA_250";
+      
 
       
       switch(alg_vers){
@@ -405,8 +437,8 @@ double bcounter = 0;
 double fcounter = 0;
 
 double OnTester(){
-
-
+   
+   
    //if(OrdersHistoryTotal()>=num_trades_thresh){
       
       
@@ -1016,3 +1048,62 @@ string value3="";
 SuperFunc(value1,value2,value3);
 MessageBox("value1="+value1+" value2="+value2+" value3="+value3);
 */
+
+
+
+void OnDeinit(const int reason){
+   
+   double run_profit = TesterStatistics(STAT_PROFIT);
+   double best_profit = -1000.0;
+   int rrab = 0;
+   rrab = FileOpen("template_best_run.tpl",FILE_CSV|FILE_READ|FILE_WRITE,",");
+   if(rrab==-1){
+      Alert("File didn't open");
+      Alert("Error code: ",GetLastError());
+   }
+   else{
+      FileSeek(rrab,0,SEEK_SET);
+      best_profit = FileReadNumber(rrab);
+      if(run_profit > best_profit){
+         FileSeek(rrab,0,SEEK_SET);
+         FileWrite(rrab,run_profit);
+         Alert("Written to File");
+         
+         
+         int ma_period = 5;
+         int bb_period = 5;
+         double bb_std = 3.0;
+         
+         string template_contents = "";
+         string template_header = "<chart>\nsymbol=GBPUSD\nperiod=30\nleftpos=37\ndigits=4\nscale=8\ngraph=1\nfore=1\ngrid=1\nvolume=0\nscroll=1\nshift=1\nohlc=1\naskline=0\ndays=1\ndescriptions=0\nshift_size=20\nfixed_pos=0\nwindow_left=307\nwindow_top=0\nwindow_right=614\nwindow_bottom=159\nwindow_type=1\nbackground_color=0\nforeground_color=16777215\nbarup_color=65280\nbardown_color=65280\nbullcandle_color=0\nbearcandle_color=16777215\nchartline_color=65280\nvolumes_color=3329330\ngrid_color=10061943\naskline_color=255\nstops_color=255\n";
+         string template_openwindow = "\n<window>";
+         string template_indicator_ma = StringFormat("\nheight=151\n<indicator>\nname=main\n</indicator>\n<indicator>\nname=Moving Average\nperiod=%i\nshift=0\nmethod=0\napply=0\ncolor=16777215\nstyle=0\nweight=3\nperiod_flags=0\nshow_data=1\n</indicator>\n",ma_period);
+         string template_indicator_bb = StringFormat("\n<indicator>\nname=Bollinger Bands\nperiod=%i\nshift=0\ndeviations=%f\napply=1\ncolor=7451452nstyle=0\nweight=1\nperiod_flags=0\nshow_data=1\n</indicator>",bb_period,bb_std);
+         string template_closewindow = "\n</window>";
+         
+         StringAdd(template_contents,template_header);
+         StringAdd(template_contents,template_openwindow);
+         StringAdd(template_contents,template_indicator_ma);
+         StringAdd(template_contents,template_indicator_bb);
+         StringAdd(template_contents,template_closewindow);
+         
+         
+         int rraa = 0;
+         rraa = FileOpen("template_holder.tpl",FILE_CSV|FILE_READ|FILE_WRITE,",");
+         if(rraa==-1){
+            Alert("File didn't open");
+            Alert("Error code: ",GetLastError());
+         }
+         else{
+            FileSeek(rraa,0,SEEK_SET);
+            FileWrite(rraa,template_contents);
+            FileClose(rraa);
+            Alert("Written to File");
+         }
+      }
+      FileClose(rrab);
+   }
+}
+
+
+

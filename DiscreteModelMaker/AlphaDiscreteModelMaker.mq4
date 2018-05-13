@@ -8,6 +8,16 @@
 #property version   "1.00"
 #property strict
 
+//------------------------------------------------------------------------------------------
+//Notes:
+//AlphaDiscreteModelMaker is a copy of FoxtrotModelMaker with all the variable array values
+//replaced with discrete values (opening prices for previous bars) in the OnTick function.
+//
+//------------------------------------------------------------------------------------------
+
+
+
+
 extern int alg_vers = 0;
 
 extern int iterater = 0;
@@ -178,119 +188,10 @@ void OnTick(){
    if(New_Bar&&!first_pass){
       
       
-      double Price = Open[0];//0
-      double SMA_200 = iMA(Symbol(), Period(), 200, 0, MODE_SMA, PRICE_OPEN, 0);
-      double SMA_150 = iMA(Symbol(), Period(), 150, 0, MODE_SMA, PRICE_OPEN, 0);
-      double SMA_100 = iMA(Symbol(), Period(), 100, 0, MODE_SMA, PRICE_OPEN, 0);
-      double SMA_50 = iMA(Symbol(), Period(), 50, 0, MODE_SMA, PRICE_OPEN, 0);
-      double SMA_25 = iMA(Symbol(), Period(), 25, 0, MODE_SMA, PRICE_OPEN, 0);
-      double SMA_5 = iMA(Symbol(), Period(), 5, 0, MODE_SMA, PRICE_OPEN, 0);
-      double EMA_250 = iMA(Symbol(), Period(), 250, 0, MODE_EMA, PRICE_OPEN, 0);
-      double EMA_175 = iMA(Symbol(), Period(), 175, 0, MODE_EMA, PRICE_OPEN, 0);
-      double EMA_125 = iMA(Symbol(), Period(), 125, 0, MODE_EMA, PRICE_OPEN, 0);
-      double EMA_75 = iMA(Symbol(), Period(), 75, 0, MODE_EMA, PRICE_OPEN, 0);
-      double EMA_35 = iMA(Symbol(), Period(), 35, 0, MODE_EMA, PRICE_OPEN, 0);
-      double EMA_10 = iMA(Symbol(), Period(), 10, 0, MODE_EMA, PRICE_OPEN, 0);
-      double LWMA_200 = iMA(Symbol(), Period(), 200, 0, MODE_LWMA, PRICE_OPEN, 0);
-      double LWMA_150 = iMA(Symbol(), Period(), 150, 0, MODE_LWMA, PRICE_OPEN, 0);
-      double LWMA_100 = iMA(Symbol(), Period(), 100, 0, MODE_LWMA, PRICE_OPEN, 0);
-      double LWMA_50 = iMA(Symbol(), Period(), 50, 0, MODE_LWMA, PRICE_OPEN, 0);
-      double LWMA_25 = iMA(Symbol(), Period(), 25, 0, MODE_LWMA, PRICE_OPEN, 0);
-      double LWMA_5 = iMA(Symbol(), Period(), 5, 0, MODE_LWMA, PRICE_OPEN, 0);
+      for(int i = 0; i < 30; i++){
+         variables[i] = Open[i];
+      }
       
-      /*double SMA_200_10 = iMA(Symbol(), Period(), 200, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_150_10 = iMA(Symbol(), Period(), 150, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_100_10 = iMA(Symbol(), Period(), 100, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_50_10 = iMA(Symbol(), Period(), 50, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_25_10 = iMA(Symbol(), Period(), 25, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_5_10 = iMA(Symbol(), Period(), 5, 0, MODE_SMA, PRICE_OPEN, 10);
-      double SMA_200_20 = iMA(Symbol(), Period(), 200, 0, MODE_SMA, PRICE_OPEN, 20);
-      double SMA_150_20 = iMA(Symbol(), Period(), 150, 0, MODE_SMA, PRICE_OPEN, 20);
-      double SMA_100_20 = iMA(Symbol(), Period(), 100, 0, MODE_SMA, PRICE_OPEN, 20);
-      double SMA_50_20 = iMA(Symbol(), Period(), 50, 0, MODE_SMA, PRICE_OPEN, 20);
-      double SMA_25_20 = iMA(Symbol(), Period(), 25, 0, MODE_SMA, PRICE_OPEN, 20);
-      double SMA_5_20 = iMA(Symbol(), Period(), 5, 0, MODE_SMA, PRICE_OPEN, 20);
-      
-      double EMA_200_10 = iMA(Symbol(), Period(), 200, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_150_10 = iMA(Symbol(), Period(), 150, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_100_10 = iMA(Symbol(), Period(), 100, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_50_10 = iMA(Symbol(), Period(), 50, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_25_10 = iMA(Symbol(), Period(), 25, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_5_10 = iMA(Symbol(), Period(), 5, 0, MODE_EMA, PRICE_OPEN, 10);
-      double EMA_200_20 = iMA(Symbol(), Period(), 200, 0, MODE_EMA, PRICE_OPEN, 20);
-      double EMA_150_20 = iMA(Symbol(), Period(), 150, 0, MODE_EMA, PRICE_OPEN, 20);
-      double EMA_100_20 = iMA(Symbol(), Period(), 100, 0, MODE_EMA, PRICE_OPEN, 20);
-      double EMA_50_20 = iMA(Symbol(), Period(), 50, 0, MODE_EMA, PRICE_OPEN, 20);
-      double EMA_25_20 = iMA(Symbol(), Period(), 25, 0, MODE_EMA, PRICE_OPEN, 20);
-      double EMA_5_20 = iMA(Symbol(), Period(), 5, 0, MODE_EMA, PRICE_OPEN, 20);
-      
-      double LWMA_200_10 = iMA(Symbol(), Period(), 200, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_150_10 = iMA(Symbol(), Period(), 150, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_100_10 = iMA(Symbol(), Period(), 100, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_50_10 = iMA(Symbol(), Period(), 50, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_25_10 = iMA(Symbol(), Period(), 25, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_5_10 = iMA(Symbol(), Period(), 5, 0, MODE_LWMA, PRICE_OPEN, 10);
-      double LWMA_200_20 = iMA(Symbol(), Period(), 200, 0, MODE_LWMA, PRICE_OPEN, 20);
-      double LWMA_150_20 = iMA(Symbol(), Period(), 150, 0, MODE_LWMA, PRICE_OPEN, 20);
-      double LWMA_100_20 = iMA(Symbol(), Period(), 100, 0, MODE_LWMA, PRICE_OPEN, 20);
-      double LWMA_50_20 = iMA(Symbol(), Period(), 50, 0, MODE_LWMA, PRICE_OPEN, 20);
-      double LWMA_25_20 = iMA(Symbol(), Period(), 25, 0, MODE_LWMA, PRICE_OPEN, 20);
-      double LWMA_5_20 = iMA(Symbol(), Period(), 5, 0, MODE_LWMA, PRICE_OPEN, 20);
-      */
-      
-      
-      
-      //double BB_20_2_Main = iBands(Symbol(), 0, 20, 2, 0, PRICE_OPEN, MODE_MAIN, 0);
-      double BB_20_2_Upper = iBands(Symbol(), 0, 20, 2, 0, PRICE_OPEN, MODE_UPPER, 0);
-      double BB_20_2_Lower = iBands(Symbol(), 0, 20, 2, 0, PRICE_OPEN, MODE_LOWER, 0);
-      double BB_20_3_Upper = iBands(Symbol(), 0, 20, 3, 0, PRICE_OPEN, MODE_UPPER, 0);
-      double BB_20_3_Lower = iBands(Symbol(), 0, 20, 3, 0, PRICE_OPEN, MODE_LOWER, 0);
-      //double BB_50_3_Main = iBands(Symbol(), 0, 50, 3, 0, PRICE_OPEN, MODE_MAIN, 0);
-      double BB_50_2_Upper = iBands(Symbol(), 0, 50, 2, 0, PRICE_OPEN, MODE_UPPER, 0);
-      double BB_50_2_Lower = iBands(Symbol(), 0, 50, 2, 0, PRICE_OPEN, MODE_LOWER, 0);
-      double BB_50_3_Upper = iBands(Symbol(), 0, 50, 3, 0, PRICE_OPEN, MODE_UPPER, 0);
-      double BB_50_3_Lower = iBands(Symbol(), 0, 50, 3, 0, PRICE_OPEN, MODE_LOWER, 0);
-      //double ADX_Main = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_MAIN, 0);
-      //double ADX_PlusDI = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_PLUSDI, 0);
-      //double ADX_MinusDI = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_MINUSDI, 0);  
-      //double Momentum = iMomentum(Symbol(),Period(),MomPeriod,0,0);
-      //double RSI = iRSI(Symbol(),Period(),RSIPeriod,0,0);
-      
-      
-      
-     
-      variables[0] = Price;
-      variables[1] = SMA_25;
-      variables[2] = BB_20_2_Upper;
-      variables[3] = BB_20_2_Lower;
-      variables[4] = SMA_100;
-      variables[5] = SMA_5;
-      variables[6] = BB_50_3_Upper;
-      variables[7] = BB_20_3_Lower;
-      variables[8] = Open[24];
-      variables[9] = SMA_200;      
-      variables[10] = SMA_50;
-      variables[11] = BB_20_3_Upper;
-      variables[12] = BB_50_3_Lower;
-      variables[13] = Open[12];
-      variables[14] = EMA_35;
-      variables[15] = SMA_150;
-      variables[16] = BB_50_2_Upper;
-      variables[17] = BB_50_2_Lower;
-      variables[18] = Open[48];
-      variables[19] = EMA_10;
-      variables[20] = EMA_75;
-      variables[21] = EMA_125;
-      variables[22] = EMA_175;
-      variables[23] = LWMA_100;
-      variables[24] = LWMA_50;
-      variables[25] = LWMA_25;
-      variables[26] = LWMA_5;
-      variables[27] = LWMA_150;
-      variables[28] = LWMA_200;
-      variables[29] = EMA_250;
-      
-
       
       switch(alg_vers){
          case 10 : alg_vers_10();  break;
@@ -528,9 +429,9 @@ double OnTester(){
          if(fprofit>0){fscore6 = fsortino*fsortino*fnum_trades;}
       }
       
-      if(bprofit_factor>=prof_factr_thresh
-         &&brecovery_factor>=recov_factr_thresh
-         &&bsharpe>=sharpe_thresh
+      if(profit_factor>=prof_factr_thresh
+         &&recovery_factor>=recov_factr_thresh
+         &&sharpe>=sharpe_thresh
          &&num_trades>=num_trades_thresh){
          //Write to ffffile
          int b = 0;
@@ -552,7 +453,15 @@ double OnTester(){
                       DoubleToStr(bscore2,2),DoubleToStr(bscore3,2),
                       DoubleToStr(bscore4,2),DoubleToStr(bscore5,2),
                       DoubleToStr(bscore6,2),
-                      DoubleToStr(fprofit,2),
+                      DoubleToStr(fprofit,2),DoubleToStr(fgross_profit,2),DoubleToStr(fgross_loss,2),
+                      fnum_trades,fnum_long_trades,fnum_short_trades,
+                      DoubleToStr(fprofit_factor,2),DoubleToStr(fexpected_payoff,2),DoubleToStr(frecovery_factor,2),
+                      DoubleToStr(fdrawdown_dol,2),DoubleToStr(fdrawdown_pct,3),
+                      DoubleToStr(fsharpe,3),DoubleToStr(fsortino,3),
+                      DoubleToStr(fscore0,2),DoubleToStr(fscore1,2),
+                      DoubleToStr(fscore2,2),DoubleToStr(fscore3,2),
+                      DoubleToStr(fscore4,2),DoubleToStr(fscore5,2),
+                      DoubleToStr(fscore6,2),
                       num_trades,
                       firstftrade,
                       iterater,sell_iterater,exit_long_itrtr,exit_short_itrtr,file_name);

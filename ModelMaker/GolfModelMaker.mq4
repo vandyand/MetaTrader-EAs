@@ -14,6 +14,9 @@ extern int iterater = 0;
 extern int sell_iterater = 0;
 extern int exit_long_itrtr = 0;
 extern int exit_short_itrtr = 0;
+extern int adx_iterater = 0;
+extern int adx_period = 14;
+//extern int num_bars = 6;
 extern bool use_sl = false;
 extern int StopLoss = 0;
 extern int TakeProfit = 0;
@@ -25,20 +28,8 @@ extern int num_comparers = 2;
 int unique_table[][2];
 int test_table[][2];
 int num_comparisons = 0;
-//extern datetime start_datetime = 0;
-//extern datetime split_datetime = 0;
-//extern datetime end_datetime = 0;
-extern double prof_factr_thresh = 0;
-extern double recov_factr_thresh = 0;
-extern double sharpe_thresh = 0;
-extern double score_thresh = 0;
-extern int num_trades_thresh = 1;
-extern string split_type = "";
-extern datetime split_datetime = 0;
-extern double back_fore_ratio = 0;
 extern bool write_to_file = false;
 extern string file_nameish = "";
-extern int score_type = 0;
 
 void OnInit()
 {
@@ -160,15 +151,19 @@ bool ExitShortCond = false;
 
 int BBPeriod = 20;
 double BBStdDev = 2;
-int ADXPeriod = 20;
 int MomPeriod = 20;
 int RSIPeriod = 20;
 
-double variables[1000];
+double variables[100];
+double adx_variables[10];
 
 
 bool first_pass = true;
 
+//V50 stuff
+int adx_unique_table[6][3] = {0,1,2, 0,2,1,  1,0,2, 1,2,0,  2,0,1, 2,1,0};
+int bar_count = 0;
+//
 
 void OnTick(){
    
@@ -250,12 +245,13 @@ void OnTick(){
       double BB_50_2_Lower = iBands(Symbol(), 0, 50, 2, 0, PRICE_OPEN, MODE_LOWER, 0);
       double BB_50_3_Upper = iBands(Symbol(), 0, 50, 3, 0, PRICE_OPEN, MODE_UPPER, 0);
       double BB_50_3_Lower = iBands(Symbol(), 0, 50, 3, 0, PRICE_OPEN, MODE_LOWER, 0);
-      //double ADX_Main = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_MAIN, 0);
-      //double ADX_PlusDI = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_PLUSDI, 0);
-      //double ADX_MinusDI = iADX(Symbol(), 0, ADXPeriod, PRICE_OPEN, MODE_MINUSDI, 0);  
-      //double Momentum = iMomentum(Symbol(),Period(),MomPeriod,0,0);
-      //double RSI = iRSI(Symbol(),Period(),RSIPeriod,0,0);
       
+      
+      double ADX_Main = iADX(Symbol(), 0, adx_period, PRICE_OPEN, MODE_MAIN, 0);
+      double ADX_PlusDI = iADX(Symbol(), 0, adx_period, PRICE_OPEN, MODE_PLUSDI, 0);
+      double ADX_MinusDI = iADX(Symbol(), 0, adx_period, PRICE_OPEN, MODE_MINUSDI, 0);  
+      //double Momentum = iMomentum(Symbol(),Period(),MomPeriod,0,0);
+      //double RSI = iRSI(Symbol(),Period(),RSIPeriod,0,0);     
       
       
      
@@ -268,7 +264,7 @@ void OnTick(){
       variables[6] = BB_50_3_Upper;
       variables[7] = BB_20_3_Lower;
       variables[8] = Open[24];
-      variables[9] = SMA_200;      
+      variables[9] = SMA_200;
       variables[10] = SMA_50;
       variables[11] = BB_20_3_Upper;
       variables[12] = BB_50_3_Lower;
@@ -290,6 +286,9 @@ void OnTick(){
       variables[28] = LWMA_200;
       variables[29] = EMA_250;
       
+      adx_variables[0] = ADX_Main;
+      adx_variables[1] = ADX_PlusDI;
+      adx_variables[2] = ADX_MinusDI;
 
       
       switch(alg_vers){
@@ -300,6 +299,8 @@ void OnTick(){
          case 32 : alg_vers_32();  break;
          case 33 : alg_vers_33();  break;
          case 34 : alg_vers_34();  break;
+         case 40 : alg_vers_40();  break;
+         case 50 : alg_vers_50();  break;
          default: Alert("No algs called!");
       } 
       
@@ -330,13 +331,6 @@ bool Find_New_Bar(){
    return(New_Bar_local);
 }
 
-
-
-
-
-int firstftrade = 0;
-
-int pass = 0;
 double profit = 0;
 double gross_profit = 0;
 double gross_loss = 0;
@@ -358,221 +352,51 @@ double score4 = 0;
 double score5 = 0;
 double score6 = 0;
 
-double bprofit = 0;
-double bgross_profit = 0;
-double bgross_loss = 0;
-double bnum_trades = 0;
-double bnum_long_trades = 0;
-double bnum_short_trades = 0;
-double bprofit_factor = 1000000;
-double bexpected_payoff = 0;
-double bdrawdown_dol = 0;
-double bdrawdown_pct = 0;
-double brecovery_factor = 1000000;
-double bsharpe = 0;
-double bsortino = 0;
-double bscore0 = 0;
-double bscore1 = 0;
-double bscore2 = 0;
-double bscore3 = 0;
-double bscore4 = 0;
-double bscore5 = 0;
-double bscore6 = 0;
-
-double fprofit = 0;
-double fgross_profit = 0;
-double fgross_loss = 0;
-double fnum_trades = 0;
-double fnum_long_trades = 0;
-double fnum_short_trades = 0;
-double fprofit_factor = 1000000;
-double fexpected_payoff = 0;
-double fdrawdown_dol = 0;
-double fdrawdown_pct = 0;
-double frecovery_factor = 1000000;
-double fsharpe = 0;
-double fsortino = 0;
-double fscore0 = 0;
-double fscore1 = 0;
-double fscore2 = 0;
-double fscore3 = 0;
-double fscore4 = 0;
-double fscore5 = 0;
-double fscore6 = 0;
-
-double whole_counter = 0;
-double bcounter = 0;
-double fcounter = 0;
-
 double OnTester(){
-
-
-   //if(OrdersHistoryTotal()>=num_trades_thresh){
-      
-      
-      
-      //Overall stuff
-      pass = 0;
-      double res54 = get_performance_stats(0, "none", sharpe, sortino,
+   
+   double res54 = get_performance_stats(0, "none", sharpe, sortino,
                                            profit, gross_profit, gross_loss,
                                            drawdown_dol, drawdown_pct,
                                            num_long_trades, num_short_trades,num_trades);
-      if(gross_loss!=0){profit_factor = gross_profit/gross_loss * -1;}
-      if(drawdown_dol!=0){recovery_factor = profit/drawdown_dol;}
-      if(num_trades!=0){expected_payoff = profit/num_trades;}
-      if(num_trades>=num_trades_thresh){
-         if(profit>0){score0 = sharpe;}
-         if(profit>0){score1 = sharpe*num_trades;}
-         if(profit>0){score2 = sharpe*sharpe*num_trades;}
-         if(profit>0){score3 = sharpe*profit*num_trades;}
-         if(profit>0){score4 = sharpe*profit_factor*num_trades*num_trades;}
-         if(profit>0){score5 = sortino*num_trades;}
-         if(profit>0){score6 = sortino*sortino*num_trades;}
-      }
-      /*
-      profit_factor = TesterStatistics(STAT_PROFIT_FACTOR);
-      //if(profit_factor < prof_factr_thresh){return(0);}
-      profit = TesterStatistics(STAT_PROFIT);
-      gross_profit = TesterStatistics(STAT_GROSS_PROFIT);
-      gross_loss = TesterStatistics(STAT_GROSS_LOSS);
-      num_trades = TesterStatistics(STAT_TRADES);
-      expected_payoff = TesterStatistics(STAT_EXPECTED_PAYOFF);
-      drawdown_dol = TesterStatistics(STAT_BALANCE_DD);
-      drawdown_pct = TesterStatistics(STAT_BALANCEDD_PERCENT);
-      if(drawdown_dol!=0){recovery_factor = profit/drawdown_dol;}
-      //if(recovery_factor < recov_factr_thresh){return(0);}
-      if(profit>0){score = sharpe*profit*num_trades;}
-      */
-      if(write_to_file==false){
-         switch(score_type){
-            case 0 : return(score0);  break;
-            case 1 : return(score1);  break;
-            case 2 : return(score2);  break;
-            case 3 : return(score3);  break;
-            case 4 : return(score4);  break;
-            case 5 : return(score5);  break;
-            case 6 : return(score6);  break;
-            default: Alert("Invalid score_type!");
-         } 
-      }
+   if(gross_loss!=0){profit_factor = gross_profit/gross_loss * -1;}
+   if(drawdown_dol!=0){recovery_factor = profit/drawdown_dol;}
+   if(num_trades!=0){expected_payoff = profit/num_trades;}
+   score0 = sharpe;
+   score1 = sharpe*num_trades;
+   score2 = sharpe*sharpe*num_trades;
+   score3 = sharpe*profit*num_trades;
+   score4 = sharpe*profit_factor*num_trades*num_trades;
+   score5 = sortino*num_trades;
+   score6 = sortino*sortino*num_trades;
+   
+   //Write to ffffile
+   if(num_trades>0){
+      int b = 0;
       
-      //Get first forward trade
-      if(split_type == "ratio"){
-         firstftrade = int(OrdersHistoryTotal()*back_fore_ratio);
+      string file_name = file_nameish+"_"+string(Symbol())+"_V"+string(alg_vers)+"_NIT"+string(num_input_types)+".csv";
+      b = FileOpen(file_name,FILE_CSV|FILE_READ|FILE_WRITE,",");
+      if(b==-1){
+         Alert("File didn't open");
+         Alert("Error code: ",GetLastError());
       }
-      else if(split_type == "date"){
-         bool found = false;
-         for(int i = 0; i < OrdersHistoryTotal(); i++){
-            bool res = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
-            if(OrderOpenTime()>split_datetime){
-               firstftrade = i-1;
-               i=OrdersHistoryTotal();
-               found = true;
+      else{
+         FileSeek(b,0,SEEK_END);
+         FileWrite(b,iterater,sell_iterater,exit_long_itrtr,exit_short_itrtr,profit,gross_profit,
+         gross_loss,num_trades,num_long_trades,num_short_trades,profit_factor,expected_payoff,
+         recovery_factor,drawdown_dol,drawdown_pct,sharpe,sortino,score0,score1,score2,score3,
+         score4,score5,score6,"");
+         for(int i=0; i<OrdersHistoryTotal(); i++){
+            bool aaa = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
+            if(aaa==TRUE){
+               FileSeek(b,-2,SEEK_END);
+               FileWrite(b,string(string(OrderOpenTime())+"|"+string(OrderCloseTime())+"|"+string(OrderType())+"|"+string(OrderProfit())+"^"));
             }
          }
-         if(!found){firstftrade = OrdersHistoryTotal()-1;}
+         FileClose(b);
+         Alert("Written to File");
       }
-      else{firstftrade = 0;}
-      
-      //backtest stuff
-      /*
-      for(int i = OrdersHistoryTotal()-1; i > firstftrade; --i){
-         bool bres = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
-         bprofit += OrderProfit();
-         if(OrderProfit()>0){bgross_profit += OrderProfit();}
-         else{bgross_loss += OrderProfit();}
-      }*/
-      //bnum_trades = OrdersHistoryTotal()-1 - firstftrade;
-      //double res48 = get_drawdown(firstftrade,"back",bdrawdown_dol,bdrawdown_pct);
-      
-      double res49 = get_performance_stats(firstftrade, "back", bsharpe, bsortino,
-                                           bprofit, bgross_profit, bgross_loss,
-                                           bdrawdown_dol, bdrawdown_pct,
-                                           bnum_long_trades, bnum_short_trades, bnum_trades);
-      if(bgross_loss!=0){bprofit_factor = bgross_profit/bgross_loss * -1;}
-      if(bdrawdown_dol!=0){brecovery_factor = bprofit/bdrawdown_dol;}
-      if(bnum_trades!=0){bexpected_payoff = bprofit/bnum_trades;}
-      if(num_trades>=num_trades_thresh){
-         if(bprofit>0){bscore0 = bsharpe;}
-         if(bprofit>0){bscore1 = bsharpe*bnum_trades;}
-         if(bprofit>0){bscore2 = bsharpe*bsharpe*bnum_trades;}
-         if(bprofit>0){bscore3 = bsharpe*bprofit*bnum_trades;}
-         if(bprofit>0){bscore4 = bsharpe*bprofit_factor*bnum_trades*bnum_trades;}
-         if(bprofit>0){bscore5 = bsortino*bnum_trades;}
-         if(bprofit>0){bscore6 = bsortino*bsortino*bnum_trades;}
-      }
-      //foretest stuff
-      /*
-      for(int i = firstftrade; i >= 0; --i){
-         bool fres = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
-         fprofit += OrderProfit();
-         if(OrderProfit()>0){fgross_profit += OrderProfit();}
-         else{fgross_loss += OrderProfit();}         
-      }*/
-      //fnum_trades = firstftrade + 1;
-      //double res65 = get_drawdown(firstftrade,"fore",fdrawdown_dol,fdrawdown_pct);
-      double res66 = get_performance_stats(firstftrade, "fore", fsharpe, fsortino, 
-                                           fprofit, fgross_profit, fgross_loss,
-                                           fdrawdown_dol,fdrawdown_pct,
-                                           fnum_long_trades, fnum_short_trades,fnum_trades);
-      if(fgross_loss!=0){fprofit_factor = fgross_profit/fgross_loss * -1;}
-      if(fdrawdown_dol!=0){frecovery_factor = fprofit/fdrawdown_dol;}
-      if(fnum_trades!=0){fexpected_payoff = fprofit/fnum_trades;}
-      if(num_trades>=num_trades_thresh){
-         if(fprofit>0){fscore0 = fsharpe;}
-         if(fprofit>0){fscore1 = fsharpe*fnum_trades;}
-         if(fprofit>0){fscore2 = fsharpe*fsharpe*fnum_trades;}
-         if(fprofit>0){fscore3 = fsharpe*fprofit*fnum_trades;}
-         if(fprofit>0){fscore4 = fsharpe*fprofit_factor*fnum_trades*fnum_trades;}
-         if(fprofit>0){fscore5 = fsortino*fnum_trades;}
-         if(fprofit>0){fscore6 = fsortino*fsortino*fnum_trades;}
-      }
-      
-      if(bprofit_factor>=prof_factr_thresh
-         &&brecovery_factor>=recov_factr_thresh
-         &&bsharpe>=sharpe_thresh
-         &&num_trades>=num_trades_thresh){
-         //Write to ffffile
-         int b = 0;
-         
-         string file_name = file_nameish+"_"+string(Symbol())+"_V"+string(alg_vers)+"_NIT"+string(num_input_types)+".csv";
-         b = FileOpen(file_name,FILE_CSV|FILE_READ|FILE_WRITE,",");
-         if(b==-1){
-            Alert("File didn't open");
-            Alert("Error code: ",GetLastError());
-         }
-         else{
-            FileSeek(b,0,SEEK_END);
-            FileWrite(b,DoubleToStr(bprofit,2),DoubleToStr(bgross_profit,2),DoubleToStr(bgross_loss,2),
-                      bnum_trades,bnum_long_trades,bnum_short_trades,
-                      DoubleToStr(bprofit_factor,2),DoubleToStr(bexpected_payoff,2),DoubleToStr(brecovery_factor,2),
-                      DoubleToStr(bdrawdown_dol,2),DoubleToStr(bdrawdown_pct,3),
-                      DoubleToStr(bsharpe,3),DoubleToStr(bsortino,3),
-                      DoubleToStr(bscore0,2),DoubleToStr(bscore1,2),
-                      DoubleToStr(bscore2,2),DoubleToStr(bscore3,2),
-                      DoubleToStr(bscore4,2),DoubleToStr(bscore5,2),
-                      DoubleToStr(bscore6,2),
-                      DoubleToStr(fprofit,2),
-                      num_trades,
-                      firstftrade,
-                      iterater,sell_iterater,exit_long_itrtr,exit_short_itrtr,file_name);
-            FileClose(b);
-            Alert("Written to File");
-         }
-      }
-      
-      switch(score_type){
-            case 0 : return(score0);  break;
-            case 1 : return(score1);  break;
-            case 2 : return(score2);  break;
-            case 3 : return(score3);  break;
-            case 4 : return(score4);  break;
-            case 5 : return(score5);  break;
-            case 6 : return(score6);  break;
-            default: return(-1);
-         } 
-   //}
-   //return(-1);
+   }
+   return(sharpe);
 }
 
 double get_performance_stats(int firstftrade_, string bf, double& shsharpe, double& ssortino,
@@ -707,66 +531,6 @@ double get_performance_stats(int firstftrade_, string bf, double& shsharpe, doub
    
    return(1);
 }
-
-/*
-double get_drawdown(int firstftrade_, string bf, double& dd, double& dd_pct){
-   
-   if(OrdersHistoryTotal()<=1){
-      return(0);
-   }
-   
-   int num_orders = 0;
-   int strt = 0;
-   int end = 0;
-   
-   if(bf=="fore"){
-      strt = OrdersHistoryTotal()-1;
-      end = firstftrade_;
-      num_orders = OrdersHistoryTotal()-firstftrade_-1;
-   }
-   else if(bf=="back"){
-      strt = firstftrade_;
-      end = -1;
-      num_orders = firstftrade_ + 1;
-   }
-   else if(bf=="none"){
-      strt = OrdersHistoryTotal()-1;
-      end = -1;
-      num_orders = OrdersHistoryTotal();
-   }
-   else{return(-1);}
-   
-   double local_drawdown = 0;
-   double max_drawdown = 0;
-   double max_drawdown_pct = 0;
-   double high_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
-   double local_low_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
-   double curr_bal = TesterStatistics(STAT_INITIAL_DEPOSIT);
-   
-   for(int i = strt; i > end; --i){
-      bool ddres = OrderSelect(i,SELECT_BY_POS,MODE_HISTORY);
-      curr_bal += OrderProfit();
-      if(curr_bal > high_bal){
-         high_bal = curr_bal;
-         local_low_bal = curr_bal;
-      }
-      if(curr_bal < local_low_bal){
-         local_low_bal = curr_bal;
-      }
-      local_drawdown = high_bal - local_low_bal;
-      if(local_drawdown > max_drawdown){
-         max_drawdown = local_drawdown;
-         max_drawdown_pct = max_drawdown/high_bal*100;
-      }
-   }
-   
-   dd = max_drawdown;
-   dd_pct = max_drawdown_pct;
-   return(1);
-}
-*/
-
-
 
 void alg_vers_10(){
    //V0-0 uses static stoploss and takeprofit as (basically/functionally) exit conditions
@@ -998,6 +762,68 @@ void alg_vers_34(){
    
    if(((!LongCond||ShortCond))&&CheckOpenOrders()){
       bool closer = OrderClose(ticket,Lots,Ask,10,0);
+   }
+}
+
+void alg_vers_40(){
+   //V40 is long only with independant exit condition (termed ShortCond here)
+   //if use_sl is on it uses sl.
+   //First version to use adx_variables in addition to other vars.
+   LongCond = true;//Acts as enter (long only) condition
+   ShortCond = true;//Acts as exit condition
+   
+   for(int j = 0; j < num_comparers - 1; j++){
+      if(variables[unique_table[iterater][j]]<=variables[unique_table[iterater][j+1]]){
+         if((adx_variables[adx_unique_table[adx_iterater][0]]<=adx_variables[adx_unique_table[adx_iterater][1]])){//&&
+         //(adx_variables[adx_unique_table[adx_iterater][1]]<=adx_variables[adx_unique_table[adx_iterater][2]])){
+            LongCond = false;
+         }
+      }
+   }
+   
+   for(int j = 0; j < num_comparers - 1; j++){
+      if(variables[unique_table[sell_iterater][j]]<=variables[unique_table[sell_iterater][j+1]]){
+         //if(variables[unique_table[adx_iterater][0]]<=variables[unique_table[adx_iterater][1]]){
+            ShortCond = false;
+         //}
+      }
+   }
+   
+   if(LongCond&&!ShortCond&&!CheckOpenOrders()){
+      if(use_sl==false){ticket = OrderSend(Symbol(),OP_BUY,Lots,Ask,10,NULL,NULL,"Bought Here",Magic,0,0);}
+      else{ticket = OrderSend(Symbol(),OP_BUY,Lots,Ask,10,Bid-StopLoss*Point,NULL,"Bought Here",Magic,0,0);}
+   }
+   
+   if(((ShortCond))&&CheckOpenOrders()){
+      bool closer = OrderClose(ticket,Lots,Bid,10,0);
+   }
+}
+
+void alg_vers_50(){
+   //V50 is a new attempt just using adx. We'll see how it goes.
+   LongCond = false;//Acts as enter (long only) condition
+   ShortCond = false;//Acts as exit condition
+   
+   //if(CheckOpenOrders()){bar_count++;}
+   
+   if((adx_variables[adx_unique_table[adx_iterater][0]]>=adx_variables[adx_unique_table[adx_iterater][1]])&&
+   (adx_variables[adx_unique_table[adx_iterater][1]]>=adx_variables[adx_unique_table[adx_iterater][2]])){
+      LongCond = true;
+      ShortCond = false;
+   }
+   else{
+      LongCond = false;
+      ShortCond = true;
+      //bar_count = 0;
+   }
+   
+   if(LongCond&&!ShortCond&&!CheckOpenOrders()){//&&bar_count==0){
+      if(use_sl==false){ticket = OrderSend(Symbol(),OP_BUY,Lots,Ask,10,NULL,NULL,"Bought Here",Magic,0,0);}
+      else{ticket = OrderSend(Symbol(),OP_BUY,Lots,Ask,10,Bid-StopLoss*Point,NULL,"Bought Here",Magic,0,0);}
+   }
+   
+   if((ShortCond&&CheckOpenOrders())){//||bar_count>=num_bars){
+      bool closer = OrderClose(ticket,Lots,Bid,10,0);
    }
 }
 
