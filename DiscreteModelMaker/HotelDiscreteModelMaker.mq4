@@ -10,9 +10,11 @@
 
 //------------------------------------------------------------------------------------------
 //Notes:
-//EchoDiscreteModelMaker is the same as DeltaDiscreteModelMaker with file writing statistics
-//added for verification. Also included is functionality to close open trades when transitioning
-//from back to fore trades (as will inevitably happen in real life).
+//Hotel discrete model maker is copied from Foxtrot. Hotel is different in that it doesn't
+//use the OpenBars parameter. Instead it holds long trade open as long as LongCond is true
+//and ShortCond is false and holds short trade open as long as the opposite is true. If
+//LongCond and ShortCond are both true or both false then clear positions and stay out of
+//the market.
 //
 //------------------------------------------------------------------------------------------
 
@@ -25,7 +27,7 @@ extern int Long_Back_1;
 extern int Long_Back_2;
 extern int Short_Back_1;
 extern int Short_Back_2;
-extern int Open_Bars;
+//extern int Open_Bars;
 
 
 extern double prof_factr_thresh = 0;
@@ -55,7 +57,7 @@ bool fore = false;
 datetime cur_time = TimeLocal();
 datetime split = split_datetime;
 
-int open_bars = 0;
+//int open_bars = 0;
 
 void OnTick(){
    cur_time = TimeCurrent();
@@ -89,23 +91,15 @@ void OnTick(){
          ticket = OrderSend(Symbol(),OP_SELL,Lots,Bid,10,NULL,NULL,"Short Here",Magic,0,0);
       }
       
-      if(CheckOpenOrders()){
-         open_bars++;
-      }
-      
       bool lovely = OrderSelect(ticket, SELECT_BY_TICKET);
       int type = OrderType();//0 = BUY ORDER, 1 = SELL ORDER
       
       
-      if(type==0&&(open_bars==Open_Bars||first_fore_pass)){
-         bool closer = OrderClose(ticket,Lots,Bid,10,0);
-         open_bars = 0;
+      if(CheckOpenOrders()&&(LongCond==ShortCond||first_fore_pass)){
+         if(type==0){bool closer = OrderClose(ticket,Lots,Bid,10,0);}
+         if(type==1){bool closer = OrderClose(ticket,Lots,Ask,10,0);}
       }
-      
-      if(type==1&&(open_bars==Open_Bars||first_fore_pass)){
-         bool closer = OrderClose(ticket,Lots,Ask,10,0);
-         open_bars = 0;
-      }
+
       
    }
    
@@ -154,6 +148,7 @@ double drawdown_pct = 0;
 double recovery_factor = 0;
 double sharpe = 0;
 double sortino = 0;
+/*
 double score0 = 0;
 double score1 = 0;
 double score2 = 0;
@@ -171,7 +166,7 @@ double score13 = 0;
 double score14 = 0;
 double score15 = 0;
 double score16 = 0;
-double score17 = 0;
+double score17 = 0;*/
 
 double bprofit = 0;
 double bgross_profit = 0;
@@ -186,7 +181,7 @@ double bdrawdown_pct = 0;
 double brecovery_factor = 0;
 double bsharpe = 0;
 double bsortino = 0;
-double bscore0 = 0;
+/*double bscore0 = 0;
 double bscore1 = 0;
 double bscore2 = 0;
 double bscore3 = 0;
@@ -203,7 +198,7 @@ double bscore13 = 0;
 double bscore14 = 0;
 double bscore15 = 0;
 double bscore16 = 0;
-double bscore17 = 0;
+double bscore17 = 0;*/
 
 double fprofit = 0;
 double fgross_profit = 0;
@@ -218,7 +213,7 @@ double fdrawdown_pct = 0;
 double frecovery_factor = 0;
 double fsharpe = 0;
 double fsortino = 0;
-double fscore0 = 0;
+/*double fscore0 = 0;
 double fscore1 = 0;
 double fscore2 = 0;
 double fscore3 = 0;
@@ -235,7 +230,7 @@ double fscore13 = 0;
 double fscore14 = 0;
 double fscore15 = 0;
 double fscore16 = 0;
-double fscore17 = 0;
+double fscore17 = 0;*/
 
 double whole_counter = 0;
 double bcounter = 0;
@@ -257,10 +252,11 @@ double OnTester(){
       if(gross_loss!=0){profit_factor = gross_profit/gross_loss * -1;}
       else{profit_factor = num_trades;}
       if(drawdown_dol!=0){recovery_factor = profit/drawdown_dol;}
+      else{recovery_factor = num_trades;}
       if(num_trades!=0){expected_payoff = profit/num_trades;}
       //+/-: profit, sharpe, sortino
       //+: num_trades, profit_factor
-      if(num_trades>=num_trades_thresh){
+      /*if(num_trades>=num_trades_thresh){
          score0 = profit;
          score1 = sharpe;
          score2 = sharpe*num_trades;
@@ -288,7 +284,7 @@ double OnTester(){
          if(profit>0){score16 = sharpe*sortino*num_trades*profit_factor;}
          else{score16 = sharpe*sortino*num_trades*profit_factor*-1;}
          score17 = sharpe*sortino*num_trades*profit*profit_factor;
-      }
+      }*/
       
       //Get first forward trade
       
@@ -313,8 +309,9 @@ double OnTester(){
       if(bgross_loss!=0){bprofit_factor = bgross_profit/bgross_loss * -1;}
       else{bprofit_factor = bnum_trades;}
       if(bdrawdown_dol!=0){brecovery_factor = bprofit/bdrawdown_dol;}
+      else{brecovery_factor = bnum_trades;}
       if(bnum_trades!=0){bexpected_payoff = bprofit/bnum_trades;}
-      if(num_trades>=num_trades_thresh){
+      /*if(num_trades>=num_trades_thresh){
          bscore0 = bprofit;
          bscore1 = bsharpe;
          bscore2 = bsharpe*bnum_trades;
@@ -342,11 +339,11 @@ double OnTester(){
          if(bprofit>0){bscore16 = bsharpe*bsortino*bnum_trades*bprofit_factor;}
          else{bscore16 = bsharpe*bsortino*bnum_trades*bprofit_factor*-1;}
          bscore17 = bsharpe*bsortino*bnum_trades*bprofit*bprofit_factor;
-      }
+      }*/
       
       if(write_to_file==false){
          if(get_random_results){return(0);}
-         switch(score_type){
+         /*switch(score_type){
             case 0 : return(bscore0);  break;
             case 1 : return(bscore1);  break;
             case 2 : return(bscore2);  break;
@@ -366,7 +363,8 @@ double OnTester(){
             case 16 : return(bscore16);  break;
             case 17 : return(bscore17);  break;
             default: Alert("Invalid score_type!");
-         } 
+         } */
+         else{return(0);}
       }
       
       //foretest stuff
@@ -377,8 +375,9 @@ double OnTester(){
       if(fgross_loss!=0){fprofit_factor = fgross_profit/fgross_loss * -1;}
       else{fprofit_factor = fnum_trades;}
       if(fdrawdown_dol!=0){frecovery_factor = fprofit/fdrawdown_dol;}
+      else{frecovery_factor = fnum_trades;}
       if(fnum_trades!=0){fexpected_payoff = fprofit/fnum_trades;}
-      if(num_trades>=num_trades_thresh){
+      /*if(num_trades>=num_trades_thresh){
          fscore0 = fprofit;
          fscore1 = fsharpe;
          fscore2 = fsharpe*fnum_trades;
@@ -406,7 +405,7 @@ double OnTester(){
          if(fprofit>0){fscore16 = fsharpe*fsortino*fnum_trades*fprofit_factor;}
          else{fscore16 = fsharpe*fsortino*fnum_trades*fprofit_factor*-1;}
          fscore17 = fsharpe*fsortino*fnum_trades*fprofit*fprofit_factor;
-      }
+      }*/
       
       if(!only_positive_results || (only_positive_results && bprofit>0)){
       //profit_factor>=prof_factr_thresh
@@ -431,7 +430,8 @@ double OnTester(){
                       bnum_trades,bnum_long_trades,bnum_short_trades,
                       DoubleToStr(bprofit_factor,2),DoubleToStr(bexpected_payoff,2),DoubleToStr(brecovery_factor,2),
                       DoubleToStr(bdrawdown_dol,2),DoubleToStr(bdrawdown_pct,3),
-                      DoubleToStr(bscore0,2),DoubleToStr(bscore1,2),
+                      DoubleToStr(bsharpe,4),DoubleToStr(bsortino,4),
+                      /*DoubleToStr(bscore0,2),DoubleToStr(bscore1,2),
                       DoubleToStr(bscore2,2),DoubleToStr(bscore3,2),
                       DoubleToStr(bscore4,2),DoubleToStr(bscore5,2),
                       DoubleToStr(bscore6,2),DoubleToStr(bscore7,2),
@@ -439,10 +439,12 @@ double OnTester(){
                       DoubleToStr(bscore10,2),DoubleToStr(bscore11,2),
                       DoubleToStr(bscore12,2),DoubleToStr(bscore13,2),
                       DoubleToStr(bscore14,2),DoubleToStr(bscore15,2),
-                      DoubleToStr(bscore16,2),DoubleToStr(bscore17,2),
-                      DoubleToStr(fprofit,2),
+                      DoubleToStr(bscore16,2),DoubleToStr(bscore17,2),*/
+                      DoubleToStr(fprofit,2),DoubleToStr(fgross_profit,2),DoubleToStr(fgross_loss,2),
+                      fnum_trades,fnum_long_trades,fnum_short_trades,
                       DoubleToStr(fprofit_factor,2),DoubleToStr(fexpected_payoff,2),DoubleToStr(frecovery_factor,2),
                       DoubleToStr(fdrawdown_dol,2),DoubleToStr(fdrawdown_pct,3),
+                      DoubleToStr(fsharpe,4),DoubleToStr(fsortino,4),
          /*             DoubleToStr(fscore0,2),DoubleToStr(fscore1,2),
                       DoubleToStr(fscore2,2),DoubleToStr(fscore3,2),
                       DoubleToStr(fscore4,2),DoubleToStr(fscore5,2),
@@ -453,15 +455,14 @@ double OnTester(){
                       DoubleToStr(fscore14,2),DoubleToStr(fscore15,2),
                       DoubleToStr(fscore16,2),DoubleToStr(fscore17,2),*/
                       num_trades,
-                      fnum_trades,
-                      Long_Back_1,Long_Back_2,Short_Back_1,Short_Back_2,Open_Bars
+                      Long_Back_1,Long_Back_2,Short_Back_1,Short_Back_2,0
                       );
             FileClose(b);
             Alert("Written to File");
          }
       }
       if(get_random_results){return(0);}
-      switch(score_type){
+      /*switch(score_type){
             case 0 : return(bscore0);  break;
             case 1 : return(bscore1);  break;
             case 2 : return(bscore2);  break;
@@ -481,7 +482,8 @@ double OnTester(){
             case 16 : return(bscore16);  break;
             case 17 : return(bscore17);  break;
             default: return(-1);
-         } 
+         } */
+         else{return(0);}
    //}
    //return(-1);
 }
