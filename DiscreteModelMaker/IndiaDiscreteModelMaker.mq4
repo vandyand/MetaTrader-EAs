@@ -26,6 +26,7 @@ extern int Long_Back_1;
 extern int Long_Back_2;
 extern int Short_Back_1;
 extern int Short_Back_2;
+extern int Open_Bars;//empty variable kept for analysis with python
 
 
 extern double prof_factr_thresh = 0;
